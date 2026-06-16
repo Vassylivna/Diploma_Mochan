@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        @page {
+            size: A4;
+            margin: 14mm; /* Як у вас const margin = 14 */
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            color: #212529; /* textDark */
+            line-height: 1.4;
+        }
+        /* --- КОЛЬОРИ (З вашого TS) --- */
+        .text-primary { color: #003366; }
+        .text-accent { color: #FF8C00; }
+        .text-dark { color: #212529; }
+        .text-gray { color: #6C757D; }
+        .text-success { color: #28A745; }
+        .text-error { color: #DC3545; }
+
+        .bg-primary { background-color: #003366; color: white; }
+        .bg-light { background-color: #F8F9FA; }
+        .bg-header { background-color: #F5F5F5; }
+        .bg-total { background-color: #EBF5FF; }
+
+        /* --- СТРУКТУРА --- */
+        .header-stripe {
+            position: absolute; top: -14mm; left: -14mm; right: -14mm;
+            height: 24pt; /* Як у вас rect(..., 24) */
+            background-color: #003366;
+        }
+
+        .title-block { margin-top: 10pt; }
+        .main-title { font-size: 18pt; font-weight: bold; color: white; position: absolute; top: -8mm; }
+        .booking-code { text-align: right; position: absolute; top: -10mm; right: 0; color: white; }
+
+        .tour-section { margin-top: 30pt; }
+        .tour-title { font-size: 14pt; font-weight: bold; color: #003366; text-transform: uppercase; }
+        .dates { font-size: 10pt; margin-top: 2pt; }
+        .description { font-size: 8.5pt; color: #6C757D; margin-top: 6pt; }
+
+        /* БЛОК ЗАМОВНИК */
+        .info-box {
+            margin-top: 20pt;
+            border: 1px solid #DEE2E6; /* border color */
+            background-color: #F8F9FA;
+            padding: 10pt;
+            border-radius: 2pt;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        td { vertical-align: top; }
+
+        .label { font-size: 9pt; font-weight: bold; color: #003366; margin-bottom: 4pt; display: block; }
+        .value { font-size: 8.5pt; color: #212529; }
+
+        /* ЛІНІЇ */
+        .section-title { font-size: 10pt; font-weight: bold; color: #003366; border-bottom: 1px solid #003366; padding-bottom: 2pt; margin-top: 25pt; margin-bottom: 10pt; }
+
+        /* ТАБЛИЦЯ ЦІН */
+        .price-table { margin-top: 5pt; width: 100%; }
+        .price-table th { background-color: #F5F5F5; font-size: 8.5pt; font-weight: bold; padding: 6pt; border: 1px solid #DEE2E6; text-align: left; }
+        .price-table td { font-size: 8.5pt; padding: 6pt; border: 1px solid #DEE2E6; }
+        .total-row td { background-color: #EBF5FF; font-weight: bold; color: #003366; font-size: 9pt; }
+
+        .footer {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            border-top: 1px solid #DEE2E6;
+            padding-top: 5pt;
+            font-size: 8pt; color: #6C757D;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-stripe"></div>
+
+<div class="title-block">
+    <div class="main-title">ЕЛЕКТРОННИЙ КВИТОК</div>
+    <div class="booking-code">
+        <div style="font-size: 9pt; font-weight: normal;">Код бронювання:</div>
+        <div style="font-size: 12pt; font-weight: bold;" th:text="${booking.paymentCode}">ABC-123</div>
+    </div>
+</div>
+
+<div class="tour-section">
+    <div class="tour-title" th:text="${tour.title}">ТУР В КАРПАТИ</div>
+    <div class="dates" th:text="${#temporals.format(tour.startDate, 'dd.MM.yyyy HH:mm')} + ' — ' + ${#temporals.format(tour.endDate, 'dd.MM.yyyy HH:mm')}">Дати</div>
+    <div class="description" th:text="${#strings.abbreviate(tour.description.replaceAll('<[^>]*>', ''), 250)}">Опис...</div>
+</div>
+
+<div class="info-box">
+    <table>
+        <tr>
+            <td style="width: 50%">
+                <span class="label">ЗАМОВНИК</span>
+                <div class="value" th:text="${user.lastName} + ' ' + ${user.firstName} + ' ' + ${user.middleName != null ? user.middleName : ''}">Прізвище ім'я</div>
+                <div class="value" th:text="'Тел: ' + ${user.phoneNumber}">+380...</div>
+                <div class="value" th:text="'Email: ' + ${user.email}">email@test.com</div>
+            </td>
+            <td style="width: 50%">
+                <span class="label">ОПЛАТА</span>
+                <div class="value" th:text="'Картка: ' + (${booking.cardNumberMasked} ?: '**** **** **** ****')">****</div>
+                <div class="value">
+                    <span class="text-gray">Статус: </span>
+                    <span style="font-weight: bold;"
+                          th:classappend="${booking.status.name() == 'PAID' ? 'text-success' : 'text-error'}"
+                          th:text="${booking.status.name() == 'PAID' ? 'ОПЛАЧЕНО' : booking.status}">
+                              PAID
+                        </span>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="section-title">МАРШРУТ ТА ПРОЖИВАННЯ</div>
+<div style="font-size: 8.5pt;">
+    <strong>Локації:</strong>
+    <span th:each="stop, iter : ${tour.stops}"
+          th:text="${stop.location.cityName} + ' (' + ${stop.location.countryName} + ')' + (${!iter.last} ? ' -> ' : '')">
+        </span>
+</div>
+
+<div th:if="${hasHotels}" style="margin-top: 5pt; font-size: 8.5pt;">
+    <strong>Готелі:</strong><br/>
+    <div th:each="stop : ${tour.stops}" th:if="${stop.hotel != null}" style="margin-left: 5pt; margin-top: 2pt;">
+        • <span th:text="${stop.hotel.name}">Готель</span>
+        <span th:text="${'*'.repeat(stop.hotel.stars)}">***</span>
+        — <span th:text="${stop.location.cityName}">Місто</span>
+    </div>
+</div>
+
+<div class="info-box" style="background-color: #F0F8FF; border-color: #B4C8E6;">
+    <table>
+        <tr>
+            <td style="width: 50%">
+                <span class="label">МІСЦЕ ЗБОРУ:</span>
+                <div class="value" th:text="${tour.startLocation.countryName} + ', ' + ${tour.startLocation.cityName}">Україна, Львів</div>
+                <div class="value" th:text="${tour.startAddress}">вул. Городоцька</div>
+                <div class="value text-error" style="font-weight: bold; margin-top: 4pt;"
+                     th:text="'Збір: ' + ${#temporals.format(tour.startDate, 'dd.MM.yyyy')} + ' о ' + ${#temporals.format(tour.startDate.minusMinutes(30), 'HH:mm')}">
+                    Збір: ...
+                </div>
+            </td>
+            <td style="width: 50%">
+                <span class="label">ТРАНСПОРТ:</span>
+                <div class="value" th:text="${tour.transport.transportName} + ' (' + ${tour.transport.transportNumber} + ')'">Автобус</div>
+
+                <span class="label" style="margin-top: 8pt;">ГІД:</span>
+                <div class="value" th:if="${tour.guide != null}">
+                    <div th:text="${tour.guide.firstName} + ' ' + ${tour.guide.lastName}">Гід</div>
+                    <div th:text="'Тел: ' + ${tour.guide.phoneNumber}">+380...</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="section-title">ПОСЛУГИ</div>
+<table>
+    <tr>
+        <td style="width: 50%">
+            <span class="label text-success">ВКЛЮЧЕНО</span>
+            <div th:each="inc : ${tour.inclusions}" th:if="${inc.isIncluded}" class="value" style="margin-bottom: 2pt;">
+                + <span th:text="${inc.itemDescription}">Послуга</span>
+            </div>
+        </td>
+        <td style="width: 50%">
+            <span class="label text-error">НЕ ВКЛЮЧЕНО</span>
+            <div th:each="exc : ${tour.inclusions}" th:if="${!exc.isIncluded}" class="value" style="margin-bottom: 2pt;">
+                - <span th:text="${exc.itemDescription}">Послуга</span>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<div class="section-title">РОЗРАХУНОК ВАРТОСТІ</div>
+<table class="price-table">
+    <tr>
+        <th>Категорія</th>
+        <th>К-сть</th>
+        <th>Ціна за людину</th>
+        <th>Сума</th>
+    </tr>
+    <tr th:if="${booking.adultsCount > 0}">
+        <td>Дорослі</td>
+        <td th:text="${booking.adultsCount}"></td>
+        <td th:text="${#numbers.formatDecimal(basePrice, 1, 0)} + ' грн'"></td>
+        <td th:text="${#numbers.formatDecimal(basePrice * booking.adultsCount, 1, 0)} + ' грн'"></td>
+    </tr>
+    <tr th:if="${booking.childrenCount > 0}">
+        <td>Діти (-20%)</td>
+        <td th:text="${booking.childrenCount}"></td>
+        <td th:text="${#numbers.formatDecimal(basePrice * 0.8, 1, 0)} + ' грн'"></td>
+        <td th:text="${#numbers.formatDecimal(basePrice * 0.8 * booking.childrenCount, 1, 0)} + ' грн'"></td>
+    </tr>
+    <tr th:if="${booking.teensCount > 0}">
+        <td>Підлітки</td>
+        <td th:text="${booking.teensCount}"></td>
+        <td th:text="${#numbers.formatDecimal(basePrice, 1, 0)} + ' грн'"></td>
+        <td th:text="${#numbers.formatDecimal(basePrice * booking.teensCount, 1, 0)} + ' грн'"></td>
+    </tr>
+    <tr class="total-row">
+        <td colspan="3" class="text-primary">ВСЬОГО ДО СПЛАТИ:</td>
+        <td class="text-primary" th:text="${#numbers.formatDecimal(booking.totalPrice, 1, 0)} + ' грн'"></td>
+    </tr>
+</table>
+
+<div class="footer">
+    <table>
+        <tr>
+            <td>Дякуємо, що обрали Travel Time! Бажаємо приємної подорожі.</td>
+            <td style="text-align: right;" th:text="'Сформовано: ' + ${#temporals.format(timestamp, 'dd.MM.yyyy HH:mm')}"></td>
+        </tr>
+    </table>
+</div>
+
+</body>
+</html>

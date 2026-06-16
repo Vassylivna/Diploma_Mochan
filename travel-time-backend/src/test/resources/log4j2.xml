@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="Console">
+            <PatternLayout pattern="Mochan K. V. %d{HH:mm:ss.SSS yyyy-MM-dd} %logger [%t] %-5level -> %msg%n"/>
+        </Console>
+
+        <File name="FileLogger" fileName="logs/tests.log">
+            <PatternLayout pattern="Mochan K. V. %d{HH:mm:ss.SSS yyyy-MM-dd} %logger [%t] %-5level -> %msg%n"/>
+        </File>
+
+        <Async name="AsyncFileLogger">
+            <AppenderRef ref="FileLogger"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncFileLogger"/>
+        </Root>
+    </Loggers>
+</Configuration>
